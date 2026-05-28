@@ -1,0 +1,5 @@
+error: HomogeneousPixel can only be derived for structs, not unions
+ --> tests/ui/homogeneous_pixel_union.rs:5:7
+  |
+5 | union Bad {
+  |       ^^^

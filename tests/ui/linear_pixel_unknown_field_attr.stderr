@@ -1,0 +1,5 @@
+error: unknown key `frobnicate` in field-level #[linear(...)]; expected `nested`
+ --> tests/ui/linear_pixel_unknown_field_attr.rs:9:14
+  |
+9 |     #[linear(frobnicate)]
+  |              ^^^^^^^^^^

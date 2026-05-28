@@ -1,0 +1,5 @@
+error: ZeroablePixel can only be derived for structs, not unions
+ --> tests/ui/zeroable_pixel_union.rs:6:11
+  |
+6 | pub union BadPixel {
+  |           ^^^^^^^^

@@ -1,0 +1,5 @@
+error: HomogeneousPixel requires #[repr(C)] or #[repr(transparent)] attribute
+ --> tests/ui/homogeneous_pixel_missing_repr_c.rs:6:8
+  |
+6 | struct MissingReprC {
+  |        ^^^^^^^^^^^^

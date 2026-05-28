@@ -1,0 +1,5 @@
+error: ZeroablePixel can only be derived for structs, not enums
+ --> tests/ui/zeroable_pixel_enum.rs:6:10
+  |
+6 | pub enum BadPixel {
+  |          ^^^^^^^^

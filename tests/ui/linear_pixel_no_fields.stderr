@@ -1,0 +1,5 @@
+error: LinearPixel cannot be derived for structs with no fields
+ --> tests/ui/linear_pixel_no_fields.rs:7:8
+  |
+7 | struct Empty {}
+  |        ^^^^^

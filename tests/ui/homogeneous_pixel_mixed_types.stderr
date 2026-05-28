@@ -1,0 +1,5 @@
+error: HomogeneousPixel requires all fields to have the same type, but field `g` (index 1) has type `u16` while the first field has type `u8`
+ --> tests/ui/homogeneous_pixel_mixed_types.rs:9:12
+  |
+9 |     pub g: u16,
+  |            ^^^

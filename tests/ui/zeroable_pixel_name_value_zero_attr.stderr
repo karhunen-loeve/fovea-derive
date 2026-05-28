@@ -1,0 +1,5 @@
+error: #[zero = ...] is not supported; use #[zero(default)] or #[zero(<expr>)] instead
+ --> tests/ui/zeroable_pixel_name_value_zero_attr.rs:8:5
+  |
+8 |     #[zero = "default"]
+  |     ^^^^^^^^^^^^^^^^^^^

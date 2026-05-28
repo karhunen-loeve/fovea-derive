@@ -1,0 +1,5 @@
+error: ZeroablePixel requires at least one field
+ --> tests/ui/zeroable_pixel_no_fields.rs:6:12
+  |
+6 | pub struct Empty {}
+  |            ^^^^^

@@ -1,0 +1,5 @@
+error: bare #[zero] is not allowed; use #[zero(default)] or #[zero(<expr>)]
+ --> tests/ui/zeroable_pixel_bare_zero_attr.rs:7:5
+  |
+7 |     #[zero]
+  |     ^^^^^^^

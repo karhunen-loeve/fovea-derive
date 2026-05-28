@@ -1,0 +1,5 @@
+error: HomogeneousPixel can only be derived for structs, not enums
+ --> tests/ui/homogeneous_pixel_enum.rs:7:10
+  |
+7 | pub enum BadPixel {
+  |          ^^^^^^^^
