@@ -1,4 +1,4 @@
-use irys_cv_derive::PlainPixel;
+use fovea_derive::PlainPixel;
 
 #[derive(PlainPixel)]
 #[repr(C)]

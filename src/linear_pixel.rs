@@ -99,7 +99,7 @@ fn field_trait_path(field: &syn::Field) -> Result<TokenStream> {
         // bare flag `nested`.
         let ident: syn::Ident = attr.parse_args()?;
         if ident == "nested" {
-            return Ok(quote! { ::irys_cv::pixel::LinearPixel<f32> });
+            return Ok(quote! { ::fovea::pixel::LinearPixel<f32> });
         }
         return Err(syn::Error::new_spanned(
             &ident,
@@ -108,7 +108,7 @@ fn field_trait_path(field: &syn::Field) -> Result<TokenStream> {
             ),
         ));
     }
-    Ok(quote! { ::irys_cv::pixel::LinearChannel<f32> })
+    Ok(quote! { ::fovea::pixel::LinearChannel<f32> })
 }
 
 /// Main entry point for the LinearPixel derive macro.
@@ -167,7 +167,7 @@ pub fn derive(input: DeriveInput) -> Result<TokenStream> {
     };
 
     let linear_space_impl = quote! {
-        impl #impl_generics ::irys_cv::pixel::LinearSpace for #name #ty_generics #where_clause {}
+        impl #impl_generics ::fovea::pixel::LinearSpace for #name #ty_generics #where_clause {}
     };
 
     Ok(quote! {
@@ -592,7 +592,7 @@ fn generate_linear_pixel(
     };
 
     Ok(quote! {
-        impl #impl_generics ::irys_cv::pixel::LinearPixel<f32> for #name #ty_generics #where_clause {
+        impl #impl_generics ::fovea::pixel::LinearPixel<f32> for #name #ty_generics #where_clause {
             type Accumulator = #acc_ty;
             #[inline(always)]
             fn to_accumulator(&self) -> Self::Accumulator {
@@ -634,7 +634,7 @@ fn generate_from_linear(
         Fields::Named(named) => {
             let field_converts = named.named.iter().map(|f| {
                 let ident = f.ident.as_ref().unwrap();
-                quote! { #ident: ::irys_cv::pixel::FromLinear::from_linear(acc.#ident) }
+                quote! { #ident: ::fovea::pixel::FromLinear::from_linear(acc.#ident) }
             });
             quote! {
                 #name {
@@ -645,12 +645,12 @@ fn generate_from_linear(
         Fields::Unnamed(unnamed) => {
             if unnamed.unnamed.len() == 1 {
                 quote! {
-                    #name(::irys_cv::pixel::FromLinear::from_linear(acc))
+                    #name(::fovea::pixel::FromLinear::from_linear(acc))
                 }
             } else {
                 let field_converts = unnamed.unnamed.iter().enumerate().map(|(i, _)| {
                     let idx = syn::Index::from(i);
-                    quote! { ::irys_cv::pixel::FromLinear::from_linear(acc.#idx) }
+                    quote! { ::fovea::pixel::FromLinear::from_linear(acc.#idx) }
                 });
                 quote! {
                     #name(#(#field_converts),*)
@@ -661,7 +661,7 @@ fn generate_from_linear(
     };
 
     Ok(quote! {
-        impl #impl_generics ::irys_cv::pixel::FromLinear<#acc_ty> for #name #ty_generics #where_clause {
+        impl #impl_generics ::fovea::pixel::FromLinear<#acc_ty> for #name #ty_generics #where_clause {
             #[inline(always)]
             fn from_linear(acc: #acc_ty) -> Self {
                 #body
@@ -1530,10 +1530,10 @@ mod tests {
         // NOTE: `> >` (with space) reflects quote!'s tokenization when the
         // trait path is interpolated as a nested TokenStream.
         assert!(output.contains(
-            "x : < u8 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "x : < u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
         assert!(output.contains(
-            "y : < u8 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "y : < u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
     }
 
@@ -1550,7 +1550,7 @@ mod tests {
         // Single-field tuple: return the field's uniform directly, no wrapper.
         // ADR-0045: channel fields bind on LinearChannel.
         assert!(output.contains(
-            "< u8 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
     }
 
@@ -1566,10 +1566,10 @@ mod tests {
         let output = tokens.to_string();
         // ADR-0045: channel fields bind on LinearChannel.
         assert!(output.contains(
-            "< u8 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
         assert!(output.contains(
-            "< u16 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "< u16 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
     }
 
@@ -1585,13 +1585,13 @@ mod tests {
         // ADR-0045: `f32` is a channel (implements `LinearChannel<f32>`),
         // so the derive emits the channel-qualified path on each field.
         assert!(output.contains(
-            "r : < f32 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "r : < f32 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
         assert!(output.contains(
-            "g : < f32 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "g : < f32 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
         assert!(output.contains(
-            "b : < f32 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "b : < f32 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
     }
 
@@ -1607,7 +1607,7 @@ mod tests {
         assert!(output.contains("fn uniform (scalar : f32)"));
         // ADR-0045: channel fields bind on LinearChannel.
         assert!(output.contains(
-            "< u8 as :: irys_cv :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
         ));
     }
 
@@ -1636,11 +1636,11 @@ mod tests {
         assert!(output.contains("LinearPixel < f32 > for Rgb8"));
         // Field accesses use LinearChannel — check one canonical method.
         assert!(output.contains(
-            "r : < Saturating < u8 > as :: irys_cv :: pixel :: LinearChannel < f32 > > :: to_accumulator (& self . r)"
+            "r : < Saturating < u8 > as :: fovea :: pixel :: LinearChannel < f32 > > :: to_accumulator (& self . r)"
         ));
         // And the field-level LinearPixel qualification is absent.
         assert!(!output.contains(
-            "< Saturating < u8 > as :: irys_cv :: pixel :: LinearPixel < f32 > > :: to_accumulator"
+            "< Saturating < u8 > as :: fovea :: pixel :: LinearPixel < f32 > > :: to_accumulator"
         ));
     }
 
@@ -1659,11 +1659,11 @@ mod tests {
         let output = tokens.to_string();
         // Per-field accesses use LinearPixel (nested pixel composition).
         assert!(output.contains(
-            "r : < Mono < BITS > as :: irys_cv :: pixel :: LinearPixel < f32 > > :: to_accumulator (& self . r)"
+            "r : < Mono < BITS > as :: fovea :: pixel :: LinearPixel < f32 > > :: to_accumulator (& self . r)"
         ));
         // And the channel path is not used for these fields.
         assert!(!output.contains(
-            "< Mono < BITS > as :: irys_cv :: pixel :: LinearChannel < f32 > > :: to_accumulator"
+            "< Mono < BITS > as :: fovea :: pixel :: LinearChannel < f32 > > :: to_accumulator"
         ));
     }
 
@@ -1682,11 +1682,11 @@ mod tests {
         let output = tokens.to_string();
         // Nested pixel field → LinearPixel.
         assert!(output.contains(
-            "p : < Mono < 10 > as :: irys_cv :: pixel :: LinearPixel < f32 > > :: to_accumulator (& self . p)"
+            "p : < Mono < 10 > as :: fovea :: pixel :: LinearPixel < f32 > > :: to_accumulator (& self . p)"
         ));
         // Channel field → LinearChannel.
         assert!(output.contains(
-            "c : < Saturating < u8 > as :: irys_cv :: pixel :: LinearChannel < f32 > > :: to_accumulator (& self . c)"
+            "c : < Saturating < u8 > as :: fovea :: pixel :: LinearChannel < f32 > > :: to_accumulator (& self . c)"
         ));
     }
 

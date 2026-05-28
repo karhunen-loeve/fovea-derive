@@ -1,7 +1,7 @@
 //! PLAN §3.5: verify that an unknown per-field key inside
 //! `#[linear(..)]` produces a diagnostic-quality error.
 
-use irys_cv_derive::LinearPixel;
+use fovea_derive::LinearPixel;
 
 #[derive(LinearPixel)]
 #[linear(accumulator = Acc)]

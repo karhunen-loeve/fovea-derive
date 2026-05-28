@@ -1,4 +1,4 @@
-use irys_cv_derive::{PlainPixel, HomogeneousPixel};
+use fovea_derive::{PlainPixel, HomogeneousPixel};
 use std::num::Saturating;
 
 #[derive(Clone, Copy, PlainPixel, HomogeneousPixel)]

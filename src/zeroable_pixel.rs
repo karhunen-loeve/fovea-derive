@@ -40,12 +40,12 @@ impl std::fmt::Debug for ZeroStrategy {
 ///
 /// For named structs (no attributes):
 /// ```ignore
-/// impl ::irys_cv::pixel::ZeroablePixel for Rgb8 {
+/// impl ::fovea::pixel::ZeroablePixel for Rgb8 {
 ///     fn zero() -> Self {
 ///         Rgb8 {
-///             r: <Saturating<u8> as ::irys_cv::pixel::ZeroablePixel>::zero(),
-///             g: <Saturating<u8> as ::irys_cv::pixel::ZeroablePixel>::zero(),
-///             b: <Saturating<u8> as ::irys_cv::pixel::ZeroablePixel>::zero(),
+///             r: <Saturating<u8> as ::fovea::pixel::ZeroablePixel>::zero(),
+///             g: <Saturating<u8> as ::fovea::pixel::ZeroablePixel>::zero(),
+///             b: <Saturating<u8> as ::fovea::pixel::ZeroablePixel>::zero(),
 ///         }
 ///     }
 /// }
@@ -63,10 +63,10 @@ impl std::fmt::Debug for ZeroStrategy {
 ///
 /// For tuple structs:
 /// ```ignore
-/// impl ::irys_cv::pixel::ZeroablePixel for Mono8 {
+/// impl ::fovea::pixel::ZeroablePixel for Mono8 {
 ///     fn zero() -> Self {
 ///         Mono8(
-///             <Saturating<u8> as ::irys_cv::pixel::ZeroablePixel>::zero(),
+///             <Saturating<u8> as ::fovea::pixel::ZeroablePixel>::zero(),
 ///         )
 ///     }
 /// }
@@ -86,7 +86,7 @@ pub fn derive(input: DeriveInput) -> Result<TokenStream> {
 
     // Step 4 - Generate the impl block
     Ok(quote! {
-        impl #impl_generics ::irys_cv::pixel::ZeroablePixel for #name #ty_generics #where_clause {
+        impl #impl_generics ::fovea::pixel::ZeroablePixel for #name #ty_generics #where_clause {
             fn zero() -> Self {
                 #zero_body
             }
@@ -94,7 +94,7 @@ pub fn derive(input: DeriveInput) -> Result<TokenStream> {
 
         impl #impl_generics ::core::default::Default for #name #ty_generics #where_clause {
             fn default() -> Self {
-                <Self as ::irys_cv::pixel::ZeroablePixel>::zero()
+                <Self as ::fovea::pixel::ZeroablePixel>::zero()
             }
         }
     })
@@ -174,7 +174,7 @@ fn generate_field_init(field: &Field, strategy: &ZeroStrategy) -> TokenStream {
     let ty = &field.ty;
     match strategy {
         ZeroStrategy::Trait => {
-            quote! { <#ty as ::irys_cv::pixel::ZeroablePixel>::zero() }
+            quote! { <#ty as ::fovea::pixel::ZeroablePixel>::zero() }
         }
         ZeroStrategy::Default => {
             quote! { <#ty as ::core::default::Default>::default() }

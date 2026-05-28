@@ -42,12 +42,12 @@ pub fn derive(input: DeriveInput) -> Result<TokenStream> {
     // forced below so a broken pixel type cannot slip through
     // silently.
     let expanded = quote! {
-        unsafe impl ::irys_cv::pixel::PlainChannel for #name {}
-        unsafe impl ::irys_cv::pixel::PlainPixel for #name {
+        unsafe impl ::fovea::pixel::PlainChannel for #name {}
+        unsafe impl ::fovea::pixel::PlainPixel for #name {
             const CHANNELS: &'static [usize] = #channels;
         }
-        const _: () = { let _ = <#name as ::irys_cv::pixel::PlainChannel>::_ASSERT_SIZE; };
-        const _: () = { let _ = <#name as ::irys_cv::pixel::PlainPixel>::_ASSERT_CHANNELS; };
+        const _: () = { let _ = <#name as ::fovea::pixel::PlainChannel>::_ASSERT_SIZE; };
+        const _: () = { let _ = <#name as ::fovea::pixel::PlainPixel>::_ASSERT_CHANNELS; };
     };
 
     Ok(expanded)
@@ -72,7 +72,7 @@ fn generate_channels_constant(fields: &Fields, repr: &Repr) -> Result<TokenStrea
             // `PlainPixel for f32 / f64`.
             let field_types = fields.iter().map(|field| {
                 let ty = &field.ty;
-                quote! { <#ty as ::irys_cv::pixel::PlainChannel>::SIZE }
+                quote! { <#ty as ::fovea::pixel::PlainChannel>::SIZE }
             });
             Ok(quote! { &[#(#field_types),*] })
         }
@@ -96,7 +96,7 @@ fn generate_channels_constant(fields: &Fields, repr: &Repr) -> Result<TokenStrea
             // single-channel.
             let field = fields.iter().next().expect("Expected exactly one field");
             let ty = &field.ty;
-            Ok(quote! { &[<#ty as ::irys_cv::pixel::PlainChannel>::SIZE] })
+            Ok(quote! { &[<#ty as ::fovea::pixel::PlainChannel>::SIZE] })
         }
     }
 }

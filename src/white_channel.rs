@@ -30,11 +30,11 @@ use syn::{Data, DeriveInput, Fields};
 /// Expands to:
 ///
 /// ```ignore
-/// impl ::irys_cv::pixel::WhiteChannel for Rgb8 {
+/// impl ::fovea::pixel::WhiteChannel for Rgb8 {
 ///     #[inline(always)]
-///     fn white_channel() -> <Self as ::irys_cv::pixel::HomogeneousPixel>::Channel {
-///         <<Self as ::irys_cv::pixel::HomogeneousPixel>::Channel
-///             as ::irys_cv::pixel::BoundedChannel>::MAX
+///     fn white_channel() -> <Self as ::fovea::pixel::HomogeneousPixel>::Channel {
+///         <<Self as ::fovea::pixel::HomogeneousPixel>::Channel
+///             as ::fovea::pixel::BoundedChannel>::MAX
 ///     }
 /// }
 /// ```
@@ -71,12 +71,12 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let expanded = quote! {
-        impl #impl_generics ::irys_cv::pixel::WhiteChannel for #name #ty_generics #where_clause {
+        impl #impl_generics ::fovea::pixel::WhiteChannel for #name #ty_generics #where_clause {
             #[inline(always)]
-            fn white_channel() -> <Self as ::irys_cv::pixel::HomogeneousPixel>::Channel {
+            fn white_channel() -> <Self as ::fovea::pixel::HomogeneousPixel>::Channel {
                 <
-                    <Self as ::irys_cv::pixel::HomogeneousPixel>::Channel
-                    as ::irys_cv::pixel::BoundedChannel
+                    <Self as ::fovea::pixel::HomogeneousPixel>::Channel
+                    as ::fovea::pixel::BoundedChannel
                 >::MAX
             }
         }

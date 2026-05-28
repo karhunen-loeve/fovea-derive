@@ -1,4 +1,4 @@
-use irys_cv_derive::ZeroablePixel;
+use fovea_derive::ZeroablePixel;
 use std::num::Saturating;
 
 #[derive(Clone, Copy, ZeroablePixel)]

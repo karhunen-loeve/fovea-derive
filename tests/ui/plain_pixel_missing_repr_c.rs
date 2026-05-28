@@ -1,6 +1,6 @@
 //! Test that PlainPixel derive fails when #[repr(C)] is missing.
 
-use irys_cv_derive::PlainPixel;
+use fovea_derive::PlainPixel;
 
 #[derive(Clone, Copy, PlainPixel)]
 struct MissingReprC {

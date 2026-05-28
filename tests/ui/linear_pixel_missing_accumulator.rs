@@ -1,6 +1,6 @@
 //! This test verifies that LinearPixel requires #[linear(accumulator = Type)] attribute.
 
-use irys_cv_derive::LinearPixel;
+use fovea_derive::LinearPixel;
 
 #[derive(LinearPixel)]
 pub struct Rgb8 {

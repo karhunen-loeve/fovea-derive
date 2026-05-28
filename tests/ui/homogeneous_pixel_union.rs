@@ -1,4 +1,4 @@
-use irys_cv_derive::HomogeneousPixel;
+use fovea_derive::HomogeneousPixel;
 
 #[derive(HomogeneousPixel)]
 #[repr(C)]

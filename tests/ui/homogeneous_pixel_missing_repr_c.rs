@@ -1,6 +1,6 @@
 //! Test that HomogeneousPixel derive fails when #[repr(C)] is missing.
 
-use irys_cv_derive::HomogeneousPixel;
+use fovea_derive::HomogeneousPixel;
 
 #[derive(Clone, Copy, HomogeneousPixel)]
 struct MissingReprC {

@@ -1,8 +1,8 @@
 //! Reference example of valid LinearPixel derive usage.
-//! This file is not run through trybuild (irys_cv is not a dev-dependency),
+//! This file is not run through trybuild (fovea is not a dev-dependency),
 //! but serves as documentation for correct usage.
 
-use irys_cv_derive::LinearPixel;
+use fovea_derive::LinearPixel;
 
 /// Storage pixel with an external accumulator type.
 #[derive(Clone, Copy, LinearPixel)]

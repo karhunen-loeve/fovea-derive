@@ -26,11 +26,11 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     // Force evaluation of the compile-time size assertion defined as a
     // default associated constant in `HomogeneousPixel`.  See REVIEW.md issue #2.
     let expanded = quote! {
-        unsafe impl ::irys_cv::pixel::HomogeneousPixel for #name {
+        unsafe impl ::fovea::pixel::HomogeneousPixel for #name {
             type Channel = #channel_ty;
             type Channels = [#channel_ty; #channel_count];
         }
-        const _: () = { let _ = <#name as ::irys_cv::pixel::HomogeneousPixel>::_SIZE_ASSERT; };
+        const _: () = { let _ = <#name as ::fovea::pixel::HomogeneousPixel>::_SIZE_ASSERT; };
     };
 
     Ok(expanded)

@@ -1,6 +1,6 @@
 //! This test verifies that HomogeneousPixel cannot be derived for enums.
 
-use irys_cv_derive::HomogeneousPixel;
+use fovea_derive::HomogeneousPixel;
 
 #[derive(Clone, Copy, HomogeneousPixel)]
 #[repr(C)]
