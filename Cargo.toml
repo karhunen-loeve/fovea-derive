@@ -3,6 +3,7 @@ name = "fovea-derive"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
+readme = "README.md"
 description = "Derive macros for fovea"
 repository = "https://github.com/karhunen-loeve/fovea-derive"
 
