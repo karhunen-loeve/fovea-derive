@@ -1,18 +1,37 @@
 [package]
-name = "fovea-derive"
-version = "0.1.0"
-edition = "2024"
-license = "MIT"
-readme = "README.md"
-description = "Derive macros for fovea"
-repository = "https://github.com/karhunen-loeve/fovea-derive"
+name                   = "fovea-derive"
+description            = "Derive macros for fovea pixel and image traits"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+license.workspace      = true
+authors.workspace      = true
+readme                 = "README.md"
+repository             = "https://github.com/karhunen-loeve/fovea-derive"
+homepage               = "https://github.com/karhunen-loeve/fovea-derive"
+documentation          = "https://docs.rs/fovea-derive"
+keywords               = ["derive", "macro", "pixel", "image", "fovea"]
+categories             = ["development-tools::procedural-macro-helpers"]
+include = [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "tests/ui/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2", features = ["full"] }
-quote = "1"
+syn         = { version = "2", features = ["full"] }
+quote       = "1"
 proc-macro2 = "1"
 
 [dev-dependencies]

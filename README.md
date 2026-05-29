@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/fovea-derive.svg)](https://crates.io/crates/fovea-derive)
 [![Documentation](https://docs.rs/fovea-derive/badge.svg)](https://docs.rs/fovea-derive)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/karhunen-loeve/fovea-derive/blob/main/LICENSE)
 
 `fovea-derive` provides the procedural macros used by [`fovea`](https://github.com/karhunen-loeve/fovea) to derive pixel layout and arithmetic traits.
 
@@ -10,7 +10,7 @@ Most users should depend on `fovea` and use the derive macros re-exported from t
 
 ```toml
 [dependencies]
-fovea = "0.1.0"
+fovea = "0.1.1"
 ```
 
 ## Derives
@@ -46,4 +46,4 @@ The derives intentionally enforce fovea's pixel model: memory layout is explicit
 
 ## License
 
-Licensed under the [MIT License](LICENSE).
+Licensed under the [MIT License](https://github.com/karhunen-loeve/fovea-derive/blob/main/LICENSE).

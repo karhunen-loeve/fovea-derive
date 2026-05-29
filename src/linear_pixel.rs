@@ -76,7 +76,7 @@ fn is_self_accumulator(ty: &Type) -> bool {
 }
 
 /// Returns the qualified trait path the derive macro should use to
-/// access a field's linear-arithmetic methods (ADR-0045).
+/// access a field's linear-arithmetic methods.
 ///
 /// By default, fields are treated as **channels** and the emission
 /// uses `LinearChannel<f32>`. When a field is tagged
@@ -88,8 +88,7 @@ fn is_self_accumulator(ty: &Type) -> bool {
 /// The two sets are disjoint by construction: channel primitives
 /// implement `LinearChannel` and not `LinearPixel`; pixel-named
 /// types implement `LinearPixel` and not `LinearChannel`. The probe
-/// is therefore unambiguous — see ADR-0045 §4 for the full
-/// rationale.
+/// is therefore unambiguous.
 fn field_trait_path(field: &syn::Field) -> Result<TokenStream> {
     for attr in &field.attrs {
         if !attr.path().is_ident("linear") {
@@ -103,9 +102,7 @@ fn field_trait_path(field: &syn::Field) -> Result<TokenStream> {
         }
         return Err(syn::Error::new_spanned(
             &ident,
-            format!(
-                "unknown key `{ident}` in field-level #[linear(...)]; expected `nested`"
-            ),
+            format!("unknown key `{ident}` in field-level #[linear(...)]; expected `nested`"),
         ));
     }
     Ok(quote! { ::fovea::pixel::LinearChannel<f32> })
@@ -122,7 +119,7 @@ fn field_trait_path(field: &syn::Field) -> Result<TokenStream> {
 /// - `impl LinearPixel for T` (delegates `scale` to each field)
 /// - `impl FromLinear<Acc> for T` (if accumulator ≠ Self, delegates per-field conversion)
 /// - `impl LinearSpace for T` (marker trait)
-pub fn derive(input: DeriveInput) -> Result<TokenStream> {
+pub(crate) fn derive(input: DeriveInput) -> Result<TokenStream> {
     let name = &input.ident;
     let fields = validate_struct(&input)?;
     let linear_attr = parse_linear_attr(&input.attrs)?;
@@ -340,8 +337,8 @@ fn generate_mul(
 /// accumulator struct with every field initialized via
 /// `<FieldTy as LinearPixel>::uniform(scalar)`; for tuple structs the same
 /// pattern is applied by index; for single-field tuple structs the field's
-/// `uniform` is returned directly. See PLAN §3.4 and ADR-0042's related
-/// brightness/contrast motivation.
+/// `uniform` is returned directly. Supports the brightness/contrast
+/// composition `scale_add(pixel, contrast, uniform(brightness))`.
 fn generate_linear_pixel(
     name: &syn::Ident,
     fields: &Fields,
@@ -350,7 +347,7 @@ fn generate_linear_pixel(
     ty_generics: &syn::TypeGenerics,
     where_clause: Option<&syn::WhereClause>,
 ) -> Result<TokenStream> {
-    // Per-field trait emission (ADR-0045):
+    // Per-field trait emission:
     //   - By default, a field is assumed to be a **channel** and we
     //     emit `<FieldTy as LinearChannel<f32>>::method(..)`.
     //   - When a field is tagged `#[linear(nested)]` it is a nested
@@ -362,7 +359,7 @@ fn generate_linear_pixel(
     // `f32`. The unqualified form `LinearChannel::method(..)` /
     // `LinearPixel::method(..)` is ambiguous because the library
     // ships f64-scalar siblings for f64-accumulator primitives
-    // (PLAN §3.4).
+    //.
     let field_paths: Vec<TokenStream> = match fields {
         Fields::Named(n) => n
             .named
@@ -379,7 +376,7 @@ fn generate_linear_pixel(
 
     let to_acc_body = match fields {
         Fields::Named(named) => {
-            // ADR-0045 §B.4.a: call `.into()` at each field boundary so
+            // call `.into()` at each field boundary so
             // that a nested-pixel field whose accumulator differs from
             // the outer accumulator's field type (e.g. `Mono<BITS>::
             // Accumulator = MonoF32` flowing into an `RgbF32 { r: f32 }`)
@@ -402,7 +399,7 @@ fn generate_linear_pixel(
                 // accumulator, then convert into the declared `#acc_ty` via
                 // `Into`. For matching types (e.g. `f32` → `f32`) this is the
                 // identity blanket; for Phase-B types (`f32` → `MonoF32`) it
-                // picks up the `From<f32> for MonoF32` impl (ADR-0045 §B.3).
+                // picks up the `From<f32> for MonoF32` impl.
                 let ty = &unnamed.unnamed.first().unwrap().ty;
                 let path = &field_paths[0];
                 quote! {
@@ -431,7 +428,7 @@ fn generate_linear_pixel(
 
     let uniform_body = match fields {
         Fields::Named(named) => {
-            // ADR-0045 §B.4.a: `.into()` at each field boundary. Identity
+            // `.into()` at each field boundary. Identity
             // for channel fields; applies `From` for nested-pixel fields
             // whose accumulator differs from the outer field's type.
             let field_uniforms = named.named.iter().zip(field_paths.iter()).map(|(f, path)| {
@@ -448,7 +445,7 @@ fn generate_linear_pixel(
         Fields::Unnamed(unnamed) => {
             if unnamed.unnamed.len() == 1 {
                 // Single-field tuple struct: wrap the inner's broadcast into
-                // the declared accumulator via `Into` (ADR-0045 §B.3).
+                // the declared accumulator via `Into`.
                 let ty = &unnamed.unnamed.first().unwrap().ty;
                 let path = &field_paths[0];
                 quote! {
@@ -476,7 +473,7 @@ fn generate_linear_pixel(
 
     let scale_body = match fields {
         Fields::Named(named) => {
-            // ADR-0045 §B.4.a: `.into()` at each field boundary.
+            // `.into()` at each field boundary.
             let field_scales = named.named.iter().zip(field_paths.iter()).map(|(f, path)| {
                 let ident = f.ident.as_ref().unwrap();
                 let ty = &f.ty;
@@ -494,7 +491,7 @@ fn generate_linear_pixel(
                 // accumulator, then convert into the declared `#acc_ty` via
                 // `Into`. For matching types this is the identity blanket;
                 // for Phase-B types (`f32` → `MonoF32`) this picks up
-                // `From<f32> for MonoF32` (ADR-0045 §B.3).
+                // `From<f32> for MonoF32`.
                 let ty = &unnamed.unnamed.first().unwrap().ty;
                 let path = &field_paths[0];
                 quote! {
@@ -523,7 +520,7 @@ fn generate_linear_pixel(
 
     let scale_add_body = match fields {
         Fields::Named(named) => {
-            // ADR-0045 §B.4.a: two-sided `.into()` at each field boundary.
+            // two-sided `.into()` at each field boundary.
             // The outer `addend` field value has the outer accumulator's
             // field type (e.g. `f32` for `RgbF32.r`); it must be converted
             // into the inner's accumulator (e.g. `MonoF32` for
@@ -554,7 +551,7 @@ fn generate_linear_pixel(
                 // `Into`, call the inner `scale_add`, then re-wrap the
                 // result. For matching types this is the identity blanket;
                 // for Phase-B types (`MonoF32` ↔ `f32`) this picks up the
-                // mutual `From` impls (ADR-0045 §B.3).
+                // mutual `From` impls.
                 let ty = &unnamed.unnamed.first().unwrap().ty;
                 let path = &field_paths[0];
                 quote! {
@@ -1392,7 +1389,7 @@ mod tests {
         let acc = quote!(AccType);
         let tokens = generate_linear_pixel(&input.ident, fields, &acc, &impl_g, &ty_g, wh).unwrap();
         let output = tokens.to_string();
-        // Phase B (§B.4.a): addend field is re-wrapped via `.into()`
+        // addend field is re-wrapped via `.into()`
         // before forwarding; the returned inner accumulator is
         // re-wrapped via `.into()` back into the outer field type.
         assert!(
@@ -1433,7 +1430,7 @@ mod tests {
         let acc = quote!(AccTuple);
         let tokens = generate_linear_pixel(&input.ident, fields, &acc, &impl_g, &ty_g, wh).unwrap();
         let output = tokens.to_string();
-        // Phase B (§B.4.a): addend index is re-wrapped via `.into()`.
+        // addend index is re-wrapped via `.into()`.
         assert!(
             output.contains("scale_add (& self . 0 , scalar , addend . 0 . into () ,) . into ()")
         );
@@ -1454,7 +1451,7 @@ mod tests {
         };
         let tokens = derive(input).unwrap();
         let output = tokens.to_string();
-        // Phase B (§B.4.a): `.into()` wraps on both the addend field read
+        // `.into()` wraps on both the addend field read
         // and the returned accumulator value.
         assert!(
             output.contains("scale_add (& self . r , scalar , addend . r . into () ,) . into ()")
@@ -1475,7 +1472,7 @@ mod tests {
         };
         let tokens = derive(input).unwrap();
         let output = tokens.to_string();
-        // Phase B (§B.4.a): identity-path `.into()` (no-op at runtime via
+        // identity-path `.into()` (no-op at runtime via
         // the blanket `From<T> for T` impl) still appears in the token
         // stream.
         assert!(
@@ -1505,7 +1502,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------
-    // generate_linear_pixel uniform tests (PLAN §3.4)
+    // generate_linear_pixel uniform tests
     //
     // `uniform(scalar) -> Accumulator` broadcasts the scalar into every
     // channel of the accumulator. For named structs the derive emits a
@@ -1526,7 +1523,7 @@ mod tests {
         let tokens = generate_linear_pixel(&input.ident, fields, &acc, &impl_g, &ty_g, wh).unwrap();
         let output = tokens.to_string();
         assert!(output.contains("fn uniform (scalar : f32)"));
-        // ADR-0045: channel fields bind on LinearChannel, not LinearPixel.
+        // Channel fields bind on LinearChannel, not LinearPixel.
         // NOTE: `> >` (with space) reflects quote!'s tokenization when the
         // trait path is interpolated as a nested TokenStream.
         assert!(output.contains(
@@ -1548,10 +1545,12 @@ mod tests {
         let tokens = generate_linear_pixel(&input.ident, fields, &acc, &impl_g, &ty_g, wh).unwrap();
         let output = tokens.to_string();
         // Single-field tuple: return the field's uniform directly, no wrapper.
-        // ADR-0045: channel fields bind on LinearChannel.
-        assert!(output.contains(
-            "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
-        ));
+        // Channel fields bind on LinearChannel.
+        assert!(
+            output.contains(
+                "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            )
+        );
     }
 
     #[test]
@@ -1564,13 +1563,17 @@ mod tests {
         let acc = quote!(AccTuple);
         let tokens = generate_linear_pixel(&input.ident, fields, &acc, &impl_g, &ty_g, wh).unwrap();
         let output = tokens.to_string();
-        // ADR-0045: channel fields bind on LinearChannel.
-        assert!(output.contains(
-            "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
-        ));
-        assert!(output.contains(
-            "< u16 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
-        ));
+        // Channel fields bind on LinearChannel.
+        assert!(
+            output.contains(
+                "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            )
+        );
+        assert!(
+            output.contains(
+                "< u16 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            )
+        );
     }
 
     #[test]
@@ -1582,7 +1585,7 @@ mod tests {
         let tokens = derive(input).unwrap();
         let output = tokens.to_string();
         assert!(output.contains("fn uniform (scalar : f32)"));
-        // ADR-0045: `f32` is a channel (implements `LinearChannel<f32>`),
+        // `f32` is a channel (implements `LinearChannel<f32>`),
         // so the derive emits the channel-qualified path on each field.
         assert!(output.contains(
             "r : < f32 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
@@ -1605,14 +1608,16 @@ mod tests {
         let output = tokens.to_string();
         // Single-field tuple: pass-through.
         assert!(output.contains("fn uniform (scalar : f32)"));
-        // ADR-0045: channel fields bind on LinearChannel.
-        assert!(output.contains(
-            "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
-        ));
+        // Channel fields bind on LinearChannel.
+        assert!(
+            output.contains(
+                "< u8 as :: fovea :: pixel :: LinearChannel < f32 > > :: uniform (scalar)"
+            )
+        );
     }
 
     // -----------------------------------------------------------------------
-    // ADR-0045 dual-probe tests — verify the derive emits LinearChannel on
+    // Dual-probe tests — verify the derive emits LinearChannel on
     // channel fields and LinearPixel on `#[linear(nested)]` fields, and that
     // the two compose in a mixed struct.
     // -----------------------------------------------------------------------

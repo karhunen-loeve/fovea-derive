@@ -1,4 +1,7 @@
 #![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
+#![warn(unreachable_pub)]
+#![deny(rustdoc::broken_intra_doc_links)]
 
 use proc_macro::TokenStream;
 use syn::{DeriveInput, parse_macro_input};
@@ -194,7 +197,7 @@ pub fn derive_linear_pixel(input: TokenStream) -> TokenStream {
         .into()
 }
 
-/// Derive macro for `WhiteChannel` trait (ADR-0043).
+/// Derive macro for `WhiteChannel` trait.
 ///
 /// Emits an impl delegating to the channel type's `BoundedChannel::MAX`.
 /// This is the correct answer for every homogeneous pixel in the library

@@ -14,7 +14,7 @@ use syn::{Data, DeriveInput, Fields};
 /// maintains a tighter invariant than its channel type exposes
 /// (`(1 << BITS) - 1 <= u16::MAX`); it implements `WhiteChannel`
 /// manually, returning `Saturating(Self::MAX)` instead of the channel
-/// type's storage maximum. See ADR-0043.
+/// type's storage maximum.
 ///
 /// # Example
 /// ```ignore
@@ -38,7 +38,7 @@ use syn::{Data, DeriveInput, Fields};
 ///     }
 /// }
 /// ```
-pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
+pub(crate) fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     // We only support structs (pixels are structs). The actual channel
     // type is picked up through `HomogeneousPixel`; we do not need to
     // inspect fields further — but we still reject non-structs to keep

@@ -71,7 +71,7 @@ impl std::fmt::Debug for ZeroStrategy {
 ///     }
 /// }
 /// ```
-pub fn derive(input: DeriveInput) -> Result<TokenStream> {
+pub(crate) fn derive(input: DeriveInput) -> Result<TokenStream> {
     // Step 1 - Validate struct
     let fields = validate_struct(&input)?;
 

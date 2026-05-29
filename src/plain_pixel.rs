@@ -11,7 +11,7 @@ use syn::{Attribute, Data, DeriveInput, Fields, Result};
 /// 4. For each field, compute its channel size (will use the field type's SIZE)
 /// 5. Generate the `CHANNELS` constant as a slice of sizes
 /// 6. Emit the `unsafe impl PlainPixel for StructName { ... }`
-pub fn derive(input: DeriveInput) -> Result<TokenStream> {
+pub(crate) fn derive(input: DeriveInput) -> Result<TokenStream> {
     // Step 1 - Validate struct
     let name = &input.ident;
     let fields = validate_struct(&input)?;
@@ -28,13 +28,13 @@ pub fn derive(input: DeriveInput) -> Result<TokenStream> {
     // associated constants in `PlainPixel`.  Without these references the
     // assertions are dead code — a broken pixel type could slip through
     // without triggering them.  See REVIEW.md issue #2.
-    // ADR-0046: `PlainPixel` extends `PlainChannel`, so the derive
-    // must emit both impls. `PlainChannel` carries the byte-layout
-    // role (`SIZE`, `ALIGN`, `as_bytes`, `from_bytes`,
-    // `_ASSERT_SIZE`); `PlainPixel` carries the pixel role
-    // (`CHANNELS`, `DIM`, endian helpers, `cast_slice`,
-    // `_ASSERT_CHANNELS`). Both use default method bodies; the
-    // `unsafe impl` blocks exist solely to witness the invariants.
+    // `PlainPixel` extends `PlainChannel`, so the derive must emit
+    // both impls. `PlainChannel` carries the byte-layout role
+    // (`SIZE`, `ALIGN`, `as_bytes`, `from_bytes`, `_ASSERT_SIZE`);
+    // `PlainPixel` carries the pixel role (`CHANNELS`, `DIM`, endian
+    // helpers, `cast_slice`, `_ASSERT_CHANNELS`). Both use default
+    // method bodies; the `unsafe impl` blocks exist solely to witness
+    // the invariants.
     //
     // SAFETY: the caller has `#[repr(C)]` or `#[repr(transparent)]`
     // (validated above). The compile-time `_ASSERT_SIZE` (byte-level
@@ -62,14 +62,13 @@ fn generate_channels_constant(fields: &Fields, repr: &Repr) -> Result<TokenStrea
         Repr::C => {
             // for repr(C), CHANNELS = array of each field's SIZE.
             //
-            // ADR-0046: resolve `SIZE` through `PlainChannel` (the
-            // byte-layout role) instead of `PlainPixel` (the
-            // pixel-role). Every existing `PlainPixel` field type
-            // still satisfies this bound via the supertrait, and
-            // `f32` / `f64` now satisfy it too, unblocking
-            // float-channelled pixel structs (`MonoF32`, `RgbF32`,
-            // ...) after ADR-0044 Phase E revokes
-            // `PlainPixel for f32 / f64`.
+            // Resolve `SIZE` through `PlainChannel` (the byte-layout
+            // role) instead of `PlainPixel` (the pixel role). Every
+            // existing `PlainPixel` field type satisfies this bound
+            // via the supertrait, and `f32` / `f64` satisfy it too,
+            // unblocking float-channelled pixel structs (`MonoF32`,
+            // `RgbF32`, ...) where `PlainPixel for f32 / f64` is
+            // intentionally not provided.
             let field_types = fields.iter().map(|field| {
                 let ty = &field.ty;
                 quote! { <#ty as ::fovea::pixel::PlainChannel>::SIZE }
@@ -82,18 +81,17 @@ fn generate_channels_constant(fields: &Fields, repr: &Repr) -> Result<TokenStrea
             // CHANNELS as a single-channel slice whose only entry is
             // the inner type's `PlainChannel::SIZE`.
             //
-            // ADR-0046: before this ADR the derive resolved through
-            // `<ty as PlainPixel>::CHANNELS`, which required the
-            // inner type to be a pixel. That's too strong — every
-            // transparent pixel in the library wraps a single scalar
-            // channel (`Mono8(Saturating<u8>)`, `MonoF32(f32)`,
-            // etc.), and the channel role is what byte-inheritance
-            // actually requires. Going through `PlainChannel::SIZE`
-            // unblocks `MonoF32` / `MonoF64` (whose inner `f32` /
-            // `f64` are `PlainChannel` but not `PlainPixel` after
-            // ADR-0044 Phase E), and gives the same result for
-            // every other transparent wrapper because they are all
-            // single-channel.
+            // The derive resolves through `<ty as PlainChannel>::SIZE`
+            // rather than `<ty as PlainPixel>::CHANNELS`. The latter
+            // would require the inner type to be a pixel — too strong,
+            // because every transparent pixel in the library wraps a
+            // single scalar channel (`Mono8(Saturating<u8>)`,
+            // `MonoF32(f32)`, etc.) and the channel role is what
+            // byte-inheritance actually requires. Going through
+            // `PlainChannel::SIZE` unblocks `MonoF32` / `MonoF64`
+            // (whose inner `f32` / `f64` are `PlainChannel` but not
+            // `PlainPixel`) and gives the same result for every other
+            // transparent wrapper because they are all single-channel.
             let field = fields.iter().next().expect("Expected exactly one field");
             let ty = &field.ty;
             Ok(quote! { &[<#ty as ::fovea::pixel::PlainChannel>::SIZE] })
@@ -338,11 +336,11 @@ mod tests {
         let fields = validate_struct(&input).unwrap();
         let tokens = generate_channels_constant(fields, &Repr::C).unwrap();
         let output = tokens.to_string();
-        // ADR-0046: the derive resolves per-field `SIZE` through the
+        // The derive resolves per-field `SIZE` through the
         // byte-layout trait `PlainChannel` (not the pixel-role trait
         // `PlainPixel`), so that float-channelled pixels like
         // `MonoF32` / `RgbF32` can be derived even though `f32` /
-        // `f64` are no longer `PlainPixel` after ADR-0044 Phase E.
+        // `f64` are not `PlainPixel`.
         assert!(output.contains("PlainChannel"));
         assert!(output.contains("SIZE"));
     }
@@ -358,13 +356,12 @@ mod tests {
         let fields = validate_struct(&input).unwrap();
         let tokens = generate_channels_constant(fields, &Repr::Transparent).unwrap();
         let output = tokens.to_string();
-        // ADR-0046: transparent wrappers now emit
-        // `&[<InnerTy as PlainChannel>::SIZE]` instead of inheriting
-        // `<InnerTy as PlainPixel>::CHANNELS`. This works for every
-        // existing transparent pixel (they all wrap a single scalar
-        // channel) and unblocks `MonoF32(f32)` / `MonoF64(f64)` after
-        // ADR-0044 Phase E, where the inner float is a
-        // `PlainChannel` but not a `PlainPixel`.
+        // Transparent wrappers emit `&[<InnerTy as PlainChannel>::SIZE]`
+        // instead of inheriting `<InnerTy as PlainPixel>::CHANNELS`.
+        // This works for every existing transparent pixel (they all
+        // wrap a single scalar channel) and unblocks `MonoF32(f32)` /
+        // `MonoF64(f64)`, where the inner float is a `PlainChannel`
+        // but not a `PlainPixel`.
         assert!(output.contains("PlainChannel"));
         assert!(output.contains("SIZE"));
     }

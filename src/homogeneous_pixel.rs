@@ -10,7 +10,7 @@ use syn::{Attribute, Data, DeriveInput, Fields, Type};
 /// 3. Extract fields and verify all fields have the same type
 /// 4. Generate `Channel` = common field type, `Channels` = `[Channel; N]`
 /// 5. Emit `unsafe impl HomogeneousPixel for StructName { ... }`
-pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
+pub(crate) fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     // Step 1 - Validate struct
     let name = &input.ident;
     let fields = validate_struct(&input)?;
