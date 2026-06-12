@@ -4,25 +4,30 @@
 [![Documentation](https://docs.rs/fovea-derive/badge.svg)](https://docs.rs/fovea-derive)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/karhunen-loeve/fovea-derive/blob/main/LICENSE)
 
-`fovea-derive` provides the procedural macros used by [`fovea`](https://github.com/karhunen-loeve/fovea) to derive pixel layout and arithmetic traits.
+`fovea-derive` contains the procedural macros that turn pixel structs into fovea pixel types with explicit layout and semantics.
 
-Most users should depend on `fovea` and use the derive macros re-exported from that crate. Depend on `fovea-derive` directly only if you are working on the fovea internals or need the macro crate explicitly.
+Most users should depend on `fovea`, not on this crate directly. The core crate re-exports the derives so custom pixel definitions can stay in normal fovea code.
 
 ```toml
 [dependencies]
 fovea = "0.1.1"
 ```
 
+Depend on `fovea-derive` directly only if you are working on fovea internals or explicitly need the macro crate.
+
 ## Derives
 
-| Derive | Purpose |
+| Derive | What it promises |
 |---|---|
-| `PlainPixel` | Declares that a pixel has a stable byte layout suitable for byte-level access. |
-| `HomogeneousPixel` | Declares that all channels have the same channel type. |
-| `ZeroablePixel` | Generates a zero value for image allocation and initialization. |
-| `LinearPixel` | Generates linear-space arithmetic support with an explicit accumulator type. |
+| `PlainPixel` | The type has a stable byte layout suitable for byte-level access. |
+| `HomogeneousPixel` | Every channel has the same channel type and can be viewed as a channel array. |
+| `ZeroablePixel` | The type has an all-zero pixel value for allocation and initialization. |
+| `LinearPixel` | The type supports channel-wise linear arithmetic with an explicit accumulator. |
+| `WhiteChannel` | A homogeneous pixel can report its white/max channel value. |
 
-## Example
+The derives are intentionally strict. If the macro rejects a type, it is usually protecting a layout or semantic invariant that unsafe byte paths and transform bounds rely on.
+
+## Custom pixel example
 
 ```rust,ignore
 use fovea::{HomogeneousPixel, PlainPixel, ZeroablePixel};
@@ -30,19 +35,53 @@ use std::num::Saturating;
 
 #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ZeroablePixel)]
 #[repr(C)]
+pub struct BayerRg8 {
+    pub value: Saturating<u8>,
+}
+```
+
+Use `#[repr(C)]` for multi-field pixels and `#[repr(transparent)]` for one-field wrapper pixels. Avoid implicit layout. Pixel layout is part of the API contract.
+
+## Linear pixels need an accumulator
+
+Interpolation and blending often need more precision than the storage pixel. `LinearPixel` makes that accumulator explicit.
+
+```rust,ignore
+use fovea::{HomogeneousPixel, LinearPixel, PlainPixel, ZeroablePixel};
+use std::num::Saturating;
+
+#[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ZeroablePixel, LinearPixel)]
+#[repr(C)]
+#[linear(accumulator = RgbF32)]
 pub struct Rgb8 {
     pub r: Saturating<u8>,
     pub g: Saturating<u8>,
     pub b: Saturating<u8>,
 }
+
+#[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ZeroablePixel, LinearPixel)]
+#[repr(C)]
+#[linear(accumulator = Self)]
+pub struct RgbF32 {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+}
 ```
 
-The derives intentionally enforce fovea's pixel model: memory layout is explicit, channel roles are named, and invalid trait implementations should fail during compilation rather than at runtime.
+Do not derive `LinearPixel` just because arithmetic is possible. Derive it only when blending or interpolation is meaningful for the pixel semantics. Gamma-encoded sRGB pixel types intentionally do not implement `LinearSpace`.
 
-## Part of the fovea project
+## What this crate is not
 
-- Core crate: [`fovea`](https://github.com/karhunen-loeve/fovea)
-- End-to-end demos: [`fovea-examples`](https://github.com/karhunen-loeve/fovea-examples)
+`fovea-derive` does not define the pixel model. The model lives in `fovea::pixel`; this crate only automates correct implementations. Read the `fovea` crate docs first unless you are debugging macro behavior.
+
+## Crate ecosystem
+
+| Crate | Purpose |
+|---|---|
+| `fovea` | Core crate and normal home of the derive re-exports. |
+| `fovea-derive` | Procedural macro implementation crate. |
+| `fovea-examples` | Repo-only examples, including custom-pixel patterns. |
 
 ## License
 
