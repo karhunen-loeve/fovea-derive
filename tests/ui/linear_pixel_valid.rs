@@ -30,5 +30,13 @@ pub struct RgbF32 {
 #[linear(accumulator = Self)]
 pub struct MonoF32(pub f32);
 
+/// Weighted sums allowed, interpolation withheld: `no_space` suppresses the
+/// `LinearSpace` marker, which is what makes `blend()` and `Bilinear` resize
+/// compile errors on a Bayer CFA sample.
+#[derive(Clone, Copy, LinearPixel)]
+#[repr(transparent)]
+#[linear(accumulator = MonoF32, no_space)]
+pub struct BayerRggb8(pub u8);
+
 fn main() {}
 

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `#[linear(accumulator = T, no_space)]` — a bare `no_space` flag on the
+  `#[derive(LinearPixel)]` helper attribute. With it the macro emits
+  `Add` / `Sub` / `Mul`, `LinearPixel`, and `FromLinear` as before but
+  **omits `LinearSpace`**, so weighted sums (convolution, filters,
+  template matching) stay available while interpolation and blending
+  (`blend()`, `Bilinear` resize, the `LinearCombine` / `Blend` combiners)
+  become compile errors on the type.
+  This is the split raw Bayer CFA samples need — arithmetic on them is
+  meaningful, interpolation *between* them mixes colour channels — and
+  the same shape fits Lab / Luv and YCbCr later. Purely additive: without
+  the flag the macro behaves exactly as it did, `LinearSpace` included.
+
 ## [0.3.0] — 2026-07-27
 
 Released in lockstep with the rest of the `fovea` ecosystem. The

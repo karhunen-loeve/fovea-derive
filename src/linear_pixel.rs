@@ -10,51 +10,78 @@ use syn::{
 /// Parsed content of the `#[linear(...)]` attribute.
 struct LinearAttr {
     accumulator: Type,
+    /// `true` when the author wrote the bare `no_space` flag, suppressing
+    /// the `LinearSpace` marker.
+    no_space: bool,
 }
 
-/// Key-value pair inside `#[linear(...)]`.
-struct LinearKV {
+/// One argument inside `#[linear(...)]` — either `key = Type` or a bare flag.
+struct LinearArg {
     key: syn::Ident,
-    _eq: syn::Token![=],
-    value: Type,
+    value: Option<Type>,
 }
 
-impl Parse for LinearKV {
+impl Parse for LinearArg {
     fn parse(input: ParseStream) -> Result<Self> {
-        Ok(LinearKV {
-            key: input.parse()?,
-            _eq: input.parse()?,
-            value: input.parse()?,
-        })
+        let key: syn::Ident = input.parse()?;
+        let value = if input.peek(syn::Token![=]) {
+            let _: syn::Token![=] = input.parse()?;
+            Some(input.parse()?)
+        } else {
+            None
+        };
+        Ok(LinearArg { key, value })
     }
 }
 
-/// Parses the `#[linear(accumulator = SomeType)]` attribute from the list of attributes.
+/// Parses `#[linear(accumulator = SomeType)]`, optionally carrying the bare
+/// `no_space` flag, from the list of attributes.
 fn parse_linear_attr(attrs: &[Attribute]) -> Result<LinearAttr> {
     let mut accumulator: Option<Type> = None;
+    let mut no_space = false;
 
     for attr in attrs {
         if !attr.path().is_ident("linear") {
             continue;
         }
 
-        let nested = attr.parse_args_with(Punctuated::<LinearKV, Comma>::parse_terminated)?;
+        let nested = attr.parse_args_with(Punctuated::<LinearArg, Comma>::parse_terminated)?;
 
-        for kv in nested {
-            if kv.key == "accumulator" {
+        for arg in nested {
+            if arg.key == "accumulator" {
                 if accumulator.is_some() {
                     return Err(syn::Error::new_spanned(
-                        &kv.key,
+                        &arg.key,
                         "duplicate `accumulator` key in #[linear(...)]",
                     ));
                 }
-                accumulator = Some(kv.value);
+                let Some(value) = arg.value else {
+                    return Err(syn::Error::new_spanned(
+                        &arg.key,
+                        "`accumulator` in #[linear(...)] takes a type: `accumulator = Type`",
+                    ));
+                };
+                accumulator = Some(value);
+            } else if arg.key == "no_space" {
+                if arg.value.is_some() {
+                    return Err(syn::Error::new_spanned(
+                        &arg.key,
+                        "`no_space` in #[linear(...)] is a bare flag and takes no value",
+                    ));
+                }
+                if no_space {
+                    return Err(syn::Error::new_spanned(
+                        &arg.key,
+                        "duplicate `no_space` flag in #[linear(...)]",
+                    ));
+                }
+                no_space = true;
             } else {
                 return Err(syn::Error::new_spanned(
-                    &kv.key,
+                    &arg.key,
                     format!(
-                        "unknown key `{}` in #[linear(...)]; expected `accumulator`",
-                        kv.key
+                        "unknown key `{}` in #[linear(...)]; expected `accumulator` or `no_space`",
+                        arg.key
                     ),
                 ));
             }
@@ -62,7 +89,10 @@ fn parse_linear_attr(attrs: &[Attribute]) -> Result<LinearAttr> {
     }
 
     match accumulator {
-        Some(acc) => Ok(LinearAttr { accumulator: acc }),
+        Some(acc) => Ok(LinearAttr {
+            accumulator: acc,
+            no_space,
+        }),
         None => Err(syn::Error::new(
             proc_macro2::Span::call_site(),
             "LinearPixel derive requires #[linear(accumulator = Type)] attribute",
@@ -118,7 +148,7 @@ fn field_trait_path(field: &syn::Field) -> Result<TokenStream> {
 /// - `impl Add for T` (channel-wise addition)
 /// - `impl LinearPixel for T` (delegates `scale` to each field)
 /// - `impl FromLinear<Acc> for T` (if accumulator ≠ Self, delegates per-field conversion)
-/// - `impl LinearSpace for T` (marker trait)
+/// - `impl LinearSpace for T` (marker trait) — **unless** `#[linear(..., no_space)]`
 pub(crate) fn derive(input: DeriveInput) -> Result<TokenStream> {
     let name = &input.ident;
     let fields = validate_struct(&input)?;
@@ -163,8 +193,15 @@ pub(crate) fn derive(input: DeriveInput) -> Result<TokenStream> {
         )?
     };
 
-    let linear_space_impl = quote! {
-        impl #impl_generics ::fovea::pixel::LinearSpace for #name #ty_generics #where_clause {}
+    // `no_space` keeps the weighted-sum arithmetic and withholds
+    // only the interpolation marker, so `blend` and `Bilinear` become
+    // compile errors on the type while convolution and filters still work.
+    let linear_space_impl = if linear_attr.no_space {
+        quote! {}
+    } else {
+        quote! {
+            impl #impl_generics ::fovea::pixel::LinearSpace for #name #ty_generics #where_clause {}
+        }
     };
 
     Ok(quote! {
@@ -820,6 +857,79 @@ mod tests {
         let result = parse_linear_attr(&input.attrs);
         assert!(result.is_err());
         assert!(result.err().unwrap().to_string().contains("duplicate"));
+    }
+
+    #[test]
+    fn test_parse_linear_attr_no_space_flag() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[linear(accumulator = MonoF32, no_space)]
+            struct BayerRggb8(Saturating<u8>);
+        };
+        let attr = parse_linear_attr(&input.attrs).unwrap();
+        assert!(attr.no_space);
+    }
+
+    #[test]
+    fn test_parse_linear_attr_no_space_absent_by_default() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[linear(accumulator = MonoF32)]
+            struct Mono8(Saturating<u8>);
+        };
+        let attr = parse_linear_attr(&input.attrs).unwrap();
+        assert!(!attr.no_space);
+    }
+
+    #[test]
+    fn test_parse_linear_attr_no_space_rejects_value() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[linear(accumulator = MonoF32, no_space = MonoF32)]
+            struct BayerRggb8(Saturating<u8>);
+        };
+        let result = parse_linear_attr(&input.attrs);
+        assert!(result.is_err());
+        assert!(result.err().unwrap().to_string().contains("bare flag"));
+    }
+
+    #[test]
+    fn test_parse_linear_attr_duplicate_no_space() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[linear(accumulator = MonoF32, no_space, no_space)]
+            struct BayerRggb8(Saturating<u8>);
+        };
+        let result = parse_linear_attr(&input.attrs);
+        assert!(result.is_err());
+        assert!(result.err().unwrap().to_string().contains("duplicate"));
+    }
+
+    #[test]
+    fn test_parse_linear_attr_accumulator_without_value() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[linear(accumulator)]
+            struct Rgb8 { r: u8 }
+        };
+        let result = parse_linear_attr(&input.attrs);
+        assert!(result.is_err());
+        assert!(
+            result
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("accumulator = Type")
+        );
+    }
+
+    #[test]
+    fn test_derive_no_space_omits_linear_space() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[linear(accumulator = MonoF32, no_space)]
+            struct BayerRggb8(Saturating<u8>);
+        };
+        let output = derive(input).unwrap().to_string();
+        // Weighted-sum arithmetic is still generated …
+        assert!(output.contains("LinearPixel < f32 > for BayerRggb8"));
+        assert!(output.contains("FromLinear < MonoF32 > for BayerRggb8"));
+        // … but the interpolation marker is not.
+        assert!(!output.contains("LinearSpace for BayerRggb8"));
     }
 
     #[test]
