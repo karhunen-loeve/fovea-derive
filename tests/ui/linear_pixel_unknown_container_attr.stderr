@@ -1,0 +1,5 @@
+error: unknown key `frobnicate` in #[linear(...)]; expected `accumulator` or `no_space`
+ --> tests/ui/linear_pixel_unknown_container_attr.rs:7:29
+  |
+7 | #[linear(accumulator = Acc, frobnicate)]
+  |                             ^^^^^^^^^^

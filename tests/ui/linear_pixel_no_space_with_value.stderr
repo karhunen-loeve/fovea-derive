@@ -1,0 +1,5 @@
+error: `no_space` in #[linear(...)] is a bare flag and takes no value
+ --> tests/ui/linear_pixel_no_space_with_value.rs:8:29
+  |
+8 | #[linear(accumulator = Acc, no_space = Acc)]
+  |                             ^^^^^^^^

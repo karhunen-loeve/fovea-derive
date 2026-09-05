@@ -158,6 +158,20 @@ pub fn derive_zeroable_pixel(input: TokenStream) -> TokenStream {
 ///   - For storage pixels (e.g. `Rgb8`), use the float pixel (e.g. `RgbF32`).
 ///   - For float/accumulator pixels (e.g. `RgbF32`), use `Self`.
 ///   - When `Self` is used, no `FromLinear` impl is generated (blanket identity covers it).
+/// - `no_space` (bare flag): suppress the `LinearSpace` marker.
+///   Weighted sums stay available (convolution, filters, template matching);
+///   interpolation and blending — `blend()`, `Bilinear` resize, the
+///   `LinearCombine` / `Blend` combiners — become compile errors. Use it for
+///   pixel types whose arithmetic is meaningful but whose *interpolation*
+///   is not, such as the Bayer CFA mosaic types.
+///
+/// # Example (weighted sums allowed, interpolation rejected)
+/// ```ignore
+/// #[derive(Clone, Copy, LinearPixel)]
+/// #[repr(transparent)]
+/// #[linear(accumulator = MonoF32, no_space)]
+/// pub struct BayerRggb8(Saturating<u8>);
+/// ```
 ///
 /// # Example (storage pixel → float accumulator)
 /// ```ignore
@@ -187,7 +201,8 @@ pub fn derive_zeroable_pixel(input: TokenStream) -> TokenStream {
 /// - `impl Add for T` — channel-wise addition
 /// - `impl LinearPixel for T` — delegates `scale()` to each field's `LinearPixel::scale`
 /// - `impl FromLinear<Acc> for T` — delegates per-field `FromLinear` conversion (only when accumulator ≠ `Self`)
-/// - `impl LinearSpace for T` — marker trait asserting values are in a linear space
+/// - `impl LinearSpace for T` — marker trait asserting values are in a linear
+///   space; omitted when `no_space` is present
 #[proc_macro_derive(LinearPixel, attributes(linear))]
 pub fn derive_linear_pixel(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

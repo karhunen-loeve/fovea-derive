@@ -8,9 +8,8 @@
 
 Most users should depend on `fovea`, not on this crate directly. The core crate re-exports the derives so custom pixel definitions can stay in normal fovea code.
 
-```toml
-[dependencies]
-fovea = "0.1.1"
+```sh
+cargo add fovea
 ```
 
 Depend on `fovea-derive` directly only if you are working on fovea internals or explicitly need the macro crate.
@@ -70,6 +69,17 @@ pub struct RgbF32 {
 ```
 
 Do not derive `LinearPixel` just because arithmetic is possible. Derive it only when blending or interpolation is meaningful for the pixel semantics. Gamma-encoded sRGB pixel types intentionally do not implement `LinearSpace`.
+
+### When arithmetic is meaningful but interpolation is not
+
+Some types sit between the two: a weighted sum of their values is real work, but mixing two *neighbouring* values is not. A raw Bayer sensor sample is the standard case — averaging a neighbourhood estimates a defect pixel or a noise floor, while interpolating between adjacent samples blends different colour channels. Add the bare `no_space` flag and the macro emits everything except the `LinearSpace` marker, so `blend()` and `Bilinear` resize become compile errors while convolution and filtering keep working.
+
+```rust,ignore
+#[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ZeroablePixel, LinearPixel)]
+#[repr(transparent)]
+#[linear(accumulator = MonoF32, no_space)]
+pub struct BayerRggb8(Saturating<u8>);
+```
 
 ## What this crate is not
 
