@@ -8,9 +8,8 @@
 
 Most users should depend on `fovea`, not on this crate directly. The core crate re-exports the derives so custom pixel definitions can stay in normal fovea code.
 
-```toml
-[dependencies]
-fovea = "0.1.1"
+```sh
+cargo add fovea
 ```
 
 Depend on `fovea-derive` directly only if you are working on fovea internals or explicitly need the macro crate.
