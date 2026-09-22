@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-09-22
+
+Released for ecosystem-version alignment; no functional changes.
+
 ## [0.5.0] — 2026-09-18
 
 Released for ecosystem-version alignment; no functional changes.
@@ -59,6 +63,7 @@ First real public release. `0.1.0` was a name-reservation placeholder.
   support with an explicit accumulator type.
 - `trybuild` UI tests covering valid and invalid derive inputs.
 
+[0.5.1]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.2.0...v0.3.0
