@@ -23,6 +23,7 @@ Depend on `fovea-derive` directly only if you are working on fovea internals or 
 | `ZeroablePixel` | The type has an all-zero pixel value for allocation and initialization. |
 | `LinearPixel` | The type supports channel-wise linear arithmetic with an explicit accumulator. |
 | `WhiteChannel` | A homogeneous pixel can report its white/max channel value. |
+| `ChannelwiseMath` | Every channel is a quantity on its own, so channel-wise mathematics means something. Not for labels, palette indices or complex numbers. |
 
 The derives are intentionally strict. If the macro rejects a type, it is usually protecting a layout or semantic invariant that unsafe byte paths and transform bounds rely on.
 

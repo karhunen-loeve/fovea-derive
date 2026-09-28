@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `#[derive(ChannelwiseMath)]`, the derive for fovea's new
+  `ChannelwiseMath` marker. It emits an empty impl claiming that every
+  channel is a scalar quantity on its own, so channel-wise differences,
+  maxima, thresholds and statistics mean something on the pixel. It is
+  deliberately separate from `#[derive(HomogeneousPixel)]`, which promises
+  layout only: a component label or a complex number has a homogeneous
+  layout and still must not derive it. Rejects enums, unions and unit
+  structs like its sibling derives.
+
 ## [0.5.1] — 2026-09-22
 
 Released for ecosystem-version alignment; no functional changes.

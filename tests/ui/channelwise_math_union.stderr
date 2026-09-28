@@ -1,0 +1,5 @@
+error: ChannelwiseMath can only be derived for structs, not unions
+ --> tests/ui/channelwise_math_union.rs:7:7
+  |
+7 | union Bad {
+  |       ^^^

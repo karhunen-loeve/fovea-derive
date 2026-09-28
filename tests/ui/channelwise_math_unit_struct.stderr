@@ -1,0 +1,5 @@
+error: ChannelwiseMath cannot be derived for unit structs (no channels)
+ --> tests/ui/channelwise_math_unit_struct.rs:6:8
+  |
+6 | struct NoChannels;
+  |        ^^^^^^^^^^

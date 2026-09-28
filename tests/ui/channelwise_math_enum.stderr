@@ -1,0 +1,5 @@
+error: ChannelwiseMath can only be derived for structs, not enums
+ --> tests/ui/channelwise_math_enum.rs:7:10
+  |
+7 | pub enum BadPixel {
+  |          ^^^^^^^^
