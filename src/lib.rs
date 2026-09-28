@@ -216,8 +216,8 @@ pub fn derive_linear_pixel(input: TokenStream) -> TokenStream {
 /// Derive macro for `WhiteChannel` trait.
 ///
 /// Emits an impl delegating to the channel type's `BoundedChannel::MAX`.
-/// This is the correct answer for every homogeneous pixel in the library
-/// whose channel type is `BoundedChannel`.
+/// This is the correct answer for every `ChannelwiseMath` pixel in the
+/// library whose channel type is `BoundedChannel`.
 ///
 /// **Reduced-range pixels (`Mono<BITS>`) must not use this derive.**
 /// They implement `WhiteChannel` manually, returning the pixel's own
@@ -227,14 +227,15 @@ pub fn derive_linear_pixel(input: TokenStream) -> TokenStream {
 ///
 /// # Requirements
 /// - Must be a struct (named or tuple).
-/// - The struct must also implement `HomogeneousPixel` (typically via
-///   `#[derive(HomogeneousPixel)]`).
+/// - The struct must also implement `ChannelwiseMath` (typically via
+///   `#[derive(ChannelwiseMath)]`), the trait's supertrait: "white" is the
+///   top of a quantity's range, so a palette index or a label has none.
 /// - The struct's channel type (`<Self as HomogeneousPixel>::Channel`)
 ///   must implement `BoundedChannel`.
 ///
 /// # Example
 /// ```ignore
-/// #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, WhiteChannel)]
+/// #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ChannelwiseMath, WhiteChannel)]
 /// #[repr(C)]
 /// pub struct Rgb8 {
 ///     pub r: Saturating<u8>,

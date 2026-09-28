@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   layout and still must not derive it. Rejects enums, unions and unit
   structs like its sibling derives.
 
+### Changed
+
+- **Breaking:** the impl that `#[derive(WhiteChannel)]` emits now requires
+  `ChannelwiseMath`, because fovea made it the supertrait of `WhiteChannel`.
+  A pixel deriving `WhiteChannel` adds `ChannelwiseMath` to its derive list.
+
 ## [0.5.1] — 2026-09-22
 
 Released for ecosystem-version alignment; no functional changes.
