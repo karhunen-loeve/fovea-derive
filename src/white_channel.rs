@@ -18,7 +18,7 @@ use syn::{Data, DeriveInput, Fields};
 ///
 /// # Example
 /// ```ignore
-/// #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, WhiteChannel)]
+/// #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ChannelwiseMath, WhiteChannel)]
 /// #[repr(C)]
 /// pub struct Rgb8 {
 ///     pub r: Saturating<u8>,

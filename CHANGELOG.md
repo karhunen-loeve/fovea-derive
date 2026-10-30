@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-30
+
+### Added
+
+- `#[derive(ChannelwiseMath)]`, the derive for fovea's new
+  `ChannelwiseMath` marker. It emits an empty impl claiming that every
+  channel is a scalar quantity on its own, so channel-wise differences,
+  maxima, thresholds and statistics mean something on the pixel. It is
+  deliberately separate from `#[derive(HomogeneousPixel)]`, which promises
+  layout only: a component label or a complex number has a homogeneous
+  layout and still must not derive it. Rejects enums, unions and unit
+  structs like its sibling derives.
+
+### Changed
+
+- **Breaking:** the impl that `#[derive(WhiteChannel)]` emits now requires
+  `ChannelwiseMath`, because fovea made it the supertrait of `WhiteChannel`.
+  A pixel deriving `WhiteChannel` adds `ChannelwiseMath` to its derive list.
+
 ## [0.5.1] — 2026-09-22
 
 Released for ecosystem-version alignment; no functional changes.
@@ -63,6 +82,7 @@ First real public release. `0.1.0` was a name-reservation placeholder.
   support with an explicit accumulator type.
 - `trybuild` UI tests covering valid and invalid derive inputs.
 
+[0.6.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.3.0...v0.4.0

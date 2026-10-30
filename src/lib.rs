@@ -6,6 +6,7 @@
 use proc_macro::TokenStream;
 use syn::{DeriveInput, parse_macro_input};
 
+mod channelwise_math;
 mod homogeneous_pixel;
 mod linear_pixel;
 mod plain_pixel;
@@ -215,8 +216,8 @@ pub fn derive_linear_pixel(input: TokenStream) -> TokenStream {
 /// Derive macro for `WhiteChannel` trait.
 ///
 /// Emits an impl delegating to the channel type's `BoundedChannel::MAX`.
-/// This is the correct answer for every homogeneous pixel in the library
-/// whose channel type is `BoundedChannel`.
+/// This is the correct answer for every `ChannelwiseMath` pixel in the
+/// library whose channel type is `BoundedChannel`.
 ///
 /// **Reduced-range pixels (`Mono<BITS>`) must not use this derive.**
 /// They implement `WhiteChannel` manually, returning the pixel's own
@@ -226,14 +227,15 @@ pub fn derive_linear_pixel(input: TokenStream) -> TokenStream {
 ///
 /// # Requirements
 /// - Must be a struct (named or tuple).
-/// - The struct must also implement `HomogeneousPixel` (typically via
-///   `#[derive(HomogeneousPixel)]`).
+/// - The struct must also implement `ChannelwiseMath` (typically via
+///   `#[derive(ChannelwiseMath)]`), the trait's supertrait: "white" is the
+///   top of a quantity's range, so a palette index or a label has none.
 /// - The struct's channel type (`<Self as HomogeneousPixel>::Channel`)
 ///   must implement `BoundedChannel`.
 ///
 /// # Example
 /// ```ignore
-/// #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, WhiteChannel)]
+/// #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ChannelwiseMath, WhiteChannel)]
 /// #[repr(C)]
 /// pub struct Rgb8 {
 ///     pub r: Saturating<u8>,
@@ -246,6 +248,48 @@ pub fn derive_white_channel(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     white_channel::derive(input)
+        .unwrap_or_else(|err| err.to_compile_error())
+        .into()
+}
+
+/// Derive macro for the `ChannelwiseMath` marker trait.
+///
+/// Emits an empty marker impl claiming that every channel is a scalar
+/// quantity on its own, so that channel-wise operations (differences,
+/// maxima, thresholds, statistics, histograms) are meaningful on the pixel.
+///
+/// This is a claim about meaning, not about layout, so it is deliberately
+/// **not** implied by `#[derive(HomogeneousPixel)]`. Derive it next to
+/// `HomogeneousPixel` for a pixel whose channels are intensities or other
+/// measured quantities. Leave it off for a channel that is not a quantity
+/// (a component label, a palette index) and for channels that together form
+/// one value (a complex number).
+///
+/// # Requirements
+/// - Must be a struct (named or tuple).
+/// - The struct must also implement `HomogeneousPixel` (typically via
+///   `#[derive(HomogeneousPixel)]`), the marker's supertrait.
+///
+/// # Example
+/// ```ignore
+/// #[derive(Clone, Copy, PlainPixel, HomogeneousPixel, ChannelwiseMath)]
+/// #[repr(C)]
+/// pub struct Rgb8 {
+///     pub r: Saturating<u8>,
+///     pub g: Saturating<u8>,
+///     pub b: Saturating<u8>,
+/// }
+/// ```
+///
+/// # Generated Implementation
+/// ```ignore
+/// impl ::fovea::pixel::ChannelwiseMath for Rgb8 {}
+/// ```
+#[proc_macro_derive(ChannelwiseMath)]
+pub fn derive_channelwise_math(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    channelwise_math::derive(input)
         .unwrap_or_else(|err| err.to_compile_error())
         .into()
 }
