@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-30
+
 ### Added
 
 - `#[derive(ChannelwiseMath)]`, the derive for fovea's new
@@ -80,6 +82,7 @@ First real public release. `0.1.0` was a name-reservation placeholder.
   support with an explicit accumulator type.
 - `trybuild` UI tests covering valid and invalid derive inputs.
 
+[0.6.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/karhunen-loeve/fovea-derive/compare/v0.3.0...v0.4.0
